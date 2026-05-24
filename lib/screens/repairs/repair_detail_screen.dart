@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 
+import '../../core/constants.dart';
 import '../../core/formatters.dart';
 import '../../models/app_data.dart';
+import '../../models/payment_info.dart';
 import '../../models/repair.dart';
 import '../../services/pdf_service.dart';
 import '../../widgets/status_badge.dart';
@@ -33,6 +35,18 @@ class _RepairDetailScreenState extends State<RepairDetailScreen> {
     repair = widget.repair;
   }
 
+  Future<void> _saveRepair(Repair updatedRepair) async {
+    final repairs = widget.data.repairs.map((item) {
+      return item.id == updatedRepair.id ? updatedRepair : item;
+    }).toList();
+
+    setState(() {
+      repair = updatedRepair;
+    });
+
+    await widget.onDataChanged(widget.data.copyWith(repairs: repairs));
+  }
+
   Future<void> _editRepair() async {
     final Repair? updatedRepair = await Navigator.push(
       context,
@@ -47,15 +61,30 @@ class _RepairDetailScreenState extends State<RepairDetailScreen> {
 
     if (updatedRepair == null) return;
 
-    final repairs = widget.data.repairs.map((item) {
-      return item.id == updatedRepair.id ? updatedRepair : item;
-    }).toList();
+    await _saveRepair(updatedRepair);
+  }
 
-    setState(() {
-      repair = updatedRepair;
-    });
+  Future<void> _changeRepairStatus(String status) async {
+    await _saveRepair(repair.copyWith(status: status));
+  }
 
-    await widget.onDataChanged(widget.data.copyWith(repairs: repairs));
+  Future<void> _changePaymentStatus(String status) async {
+    final paymentDate = status == 'Payé'
+        ? Formatters.date(DateTime.now())
+        : repair.paymentInfo.paymentDate;
+
+    final updatedPayment = repair.paymentInfo.copyWith(
+      status: status,
+      paymentDate: paymentDate,
+    );
+
+    await _saveRepair(repair.copyWith(paymentInfo: updatedPayment));
+  }
+
+  Future<void> _changePaymentMethod(String method) async {
+    final updatedPayment = repair.paymentInfo.copyWith(method: method);
+
+    await _saveRepair(repair.copyWith(paymentInfo: updatedPayment));
   }
 
   Future<void> _sharePdf() async {
@@ -164,6 +193,34 @@ class _RepairDetailScreenState extends State<RepairDetailScreen> {
     );
   }
 
+  Widget _quickDropdown({
+    required String label,
+    required String value,
+    required List<String> values,
+    required void Function(String) onChanged,
+  }) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 10),
+      child: DropdownButtonFormField<String>(
+        value: value,
+        decoration: InputDecoration(labelText: label),
+        items: values
+            .map(
+              (item) => DropdownMenuItem(
+                value: item,
+                child: Text(item),
+              ),
+            )
+            .toList(),
+        onChanged: (newValue) {
+          if (newValue != null) {
+            onChanged(newValue);
+          }
+        },
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final linkedEvents = widget.data.events
@@ -211,11 +268,32 @@ class _RepairDetailScreenState extends State<RepairDetailScreen> {
               ),
             ),
           ),
-          const SizedBox(height: 12),
+
+          _section('Actions rapides'),
+          _quickDropdown(
+            label: 'Statut dossier',
+            value: repair.status,
+            values: repairStatuses,
+            onChanged: _changeRepairStatus,
+          ),
+          _quickDropdown(
+            label: 'Statut paiement',
+            value: repair.paymentInfo.status,
+            values: paymentStatuses,
+            onChanged: _changePaymentStatus,
+          ),
+          _quickDropdown(
+            label: 'Mode de paiement',
+            value: repair.paymentInfo.method,
+            values: paymentMethods,
+            onChanged: _changePaymentMethod,
+          ),
+
+          const SizedBox(height: 8),
           FilledButton.icon(
             onPressed: _editRepair,
             icon: const Icon(Icons.edit),
-            label: const Text('Modifier le dossier'),
+            label: const Text('Modifier tout le dossier'),
           ),
           const SizedBox(height: 8),
           OutlinedButton.icon(
@@ -229,21 +307,25 @@ class _RepairDetailScreenState extends State<RepairDetailScreen> {
             icon: const Icon(Icons.save_alt),
             label: const Text('Enregistrer PDF'),
           ),
+
           _section('Client'),
           _info('Nom client', repair.clientName),
           _info('Téléphone client', repair.clientPhone),
+
           _section('Appareil'),
           _info('Marque', repair.brand),
           _info('Modèle', repair.model),
           _info('IMEI', repair.imei),
           _info('État à l’arrivée', repair.deviceState),
           _info('Accessoires déposés', repair.accessories),
+
           _section('Réparation'),
           _info('Type', repair.repairType),
           _info('Problème constaté', repair.problem),
           _info('Garantie', repair.warranty),
           _info('Date de dépôt', repair.depositDate),
           _info('Date prévue de restitution', repair.returnDate),
+
           _section('Paiement'),
           _info('Prix total', Formatters.money(repair.totalPrice)),
           _info('Acompte', Formatters.money(repair.deposit)),
@@ -251,6 +333,7 @@ class _RepairDetailScreenState extends State<RepairDetailScreen> {
           _info('Statut paiement', repair.paymentInfo.status),
           _info('Mode paiement', repair.paymentInfo.method),
           _info('Date paiement', repair.paymentInfo.paymentDate),
+
           _section('Agenda lié'),
           if (linkedEvents.isEmpty)
             const Card(
@@ -273,6 +356,7 @@ class _RepairDetailScreenState extends State<RepairDetailScreen> {
                 ),
               ),
             ),
+
           const SizedBox(height: 14),
           OutlinedButton.icon(
             onPressed: _confirmDelete,
