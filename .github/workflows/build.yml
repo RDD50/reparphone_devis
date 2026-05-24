@@ -27,7 +27,7 @@ jobs:
       - name: Remove default widget test
         run: rm -f test/widget_test.dart
 
-      - name: Configure Android signing
+      - name: Configure Android release signing
         shell: bash
         run: |
           echo "${{ secrets.ANDROID_KEYSTORE_BASE64 }}" | base64 --decode > android/app/reparphone-dev.jks
@@ -36,82 +36,48 @@ jobs:
           storePassword=${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
           keyPassword=${{ secrets.ANDROID_KEY_PASSWORD }}
           keyAlias=${{ secrets.ANDROID_KEY_ALIAS }}
-          storeFile=app/reparphone-dev.jks
+          storeFile=reparphone-dev.jks
           EOF2
 
-          python3 <<'PY'
-          from pathlib import Path
-
-          groovy = Path("android/app/build.gradle")
-          kotlin = Path("android/app/build.gradle.kts")
-
-          if groovy.exists():
-              p = groovy
-              text = p.read_text()
-
-              header = """def keystoreProperties = new Properties()
-          def keystorePropertiesFile = rootProject.file('key.properties')
-          if (keystorePropertiesFile.exists()) {
-              keystoreProperties.load(new FileInputStream(keystorePropertiesFile))
+          cat > android/app/build.gradle.kts <<'EOF2'
+          plugins {
+              id("com.android.application")
+              id("kotlin-android")
+              id("dev.flutter.flutter-gradle-plugin")
           }
 
-          """
-
-              if "def keystoreProperties" not in text:
-                  plugins_start = text.find("plugins")
-                  plugins_end = text.find("}\n", plugins_start)
-                  text = text[:plugins_end + 2] + "\n" + header + text[plugins_end + 2:]
-
-              if "signingConfigs {" not in text:
-                  text = text.replace(
-                      "    buildTypes {",
-                      """    signingConfigs {
-                  release {
-                      keyAlias keystoreProperties['keyAlias']
-                      keyPassword keystoreProperties['keyPassword']
-                      storeFile file(keystoreProperties['storeFile'])
-                      storePassword keystoreProperties['storePassword']
-                  }
-              }
-
-              buildTypes {"""
-                  )
-
-              text = text.replace(
-                  "signingConfig signingConfigs.debug",
-                  "signingConfig signingConfigs.release"
-              )
-
-              p.write_text(text)
-
-          elif kotlin.exists():
-              p = kotlin
-              text = p.read_text()
-
-              imports = """import java.util.Properties
+          import java.util.Properties
           import java.io.FileInputStream
 
-          """
-
-              if "java.util.Properties" not in text:
-                  text = imports + text
-
-              props = """val keystoreProperties = Properties()
+          val keystoreProperties = Properties()
           val keystorePropertiesFile = rootProject.file("key.properties")
           if (keystorePropertiesFile.exists()) {
               keystoreProperties.load(FileInputStream(keystorePropertiesFile))
           }
 
-          """
+          android {
+              namespace = "com.rdd50.reparphone.devis"
+              compileSdk = flutter.compileSdkVersion
+              ndkVersion = flutter.ndkVersion
 
-              if "val keystoreProperties" not in text:
-                  plugins_start = text.find("plugins")
-                  text = text[:plugins_start] + props + text[plugins_start:]
+              compileOptions {
+                  sourceCompatibility = JavaVersion.VERSION_1_8
+                  targetCompatibility = JavaVersion.VERSION_1_8
+              }
 
-              if "create(\"release\")" not in text:
-                  text = text.replace(
-                      "    buildTypes {",
-                      """    signingConfigs {
+              kotlinOptions {
+                  jvmTarget = JavaVersion.VERSION_1_8.toString()
+              }
+
+              defaultConfig {
+                  applicationId = "com.rdd50.reparphone.devis"
+                  minSdk = flutter.minSdkVersion
+                  targetSdk = flutter.targetSdkVersion
+                  versionCode = flutter.versionCode
+                  versionName = flutter.versionName
+              }
+
+              signingConfigs {
                   create("release") {
                       keyAlias = keystoreProperties["keyAlias"] as String
                       keyPassword = keystoreProperties["keyPassword"] as String
@@ -120,19 +86,19 @@ jobs:
                   }
               }
 
-              buildTypes {"""
-                  )
+              buildTypes {
+                  release {
+                      signingConfig = signingConfigs.getByName("release")
+                      isMinifyEnabled = false
+                      isShrinkResources = false
+                  }
+              }
+          }
 
-              text = text.replace(
-                  "signingConfig = signingConfigs.getByName(\"debug\")",
-                  "signingConfig = signingConfigs.getByName(\"release\")"
-              )
-
-              p.write_text(text)
-
-          else:
-              raise SystemExit("Aucun fichier Gradle Android trouvé.")
-          PY
+          flutter {
+              source = "../.."
+          }
+          EOF2
 
       - name: Get dependencies
         run: flutter pub get
@@ -143,10 +109,16 @@ jobs:
       - name: Build APK
         run: flutter build apk --release
 
+      - name: Verify APK signing certificate
+        shell: bash
+        run: |
+          $ANDROID_HOME/build-tools/34.0.0/apksigner verify --verbose --print-certs build/app/outputs/flutter-apk/app-release.apk
+          $ANDROID_HOME/build-tools/34.0.0/apksigner verify --print-certs build/app/outputs/flutter-apk/app-release.apk | grep -v "Android Debug"
+
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: reparphone-devis-v34-apk
+          name: reparphone-devis-v35-apk
           path: build/app/outputs/flutter-apk/app-release.apk
 
   build-windows:
@@ -184,5 +156,5 @@ jobs:
       - name: Upload Windows build
         uses: actions/upload-artifact@v4
         with:
-          name: reparphone-devis-v34-windows
+          name: reparphone-devis-v35-windows
           path: build/windows/x64/runner/Release/
