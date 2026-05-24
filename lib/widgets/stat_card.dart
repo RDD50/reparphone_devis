@@ -1,20 +1,22 @@
 import 'package:flutter/material.dart';
 
-class DashboardCard extends StatelessWidget {
+class StatCard extends StatelessWidget {
   final String title;
   final String value;
   final IconData icon;
+  final Color? color;
 
-  const DashboardCard({
+  const StatCard({
     super.key,
     required this.title,
     required this.value,
     required this.icon,
+    this.color,
   });
 
   @override
   Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
+    final effectiveColor = color ?? Theme.of(context).colorScheme.primary;
 
     return Card(
       child: Padding(
@@ -22,20 +24,22 @@ class DashboardCard extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Icon(icon, color: colorScheme.primary),
-            const SizedBox(height: 10),
+            Icon(icon, color: effectiveColor, size: 25),
+            const Spacer(),
             Text(
               value,
               style: const TextStyle(
-                fontSize: 21,
-                fontWeight: FontWeight.bold,
+                fontSize: 23,
+                fontWeight: FontWeight.w800,
               ),
             ),
-            const SizedBox(height: 4),
+            const SizedBox(height: 3),
             Text(
               title,
               style: TextStyle(
+                fontSize: 13,
                 color: Colors.grey.shade700,
+                fontWeight: FontWeight.w500,
               ),
             ),
           ],

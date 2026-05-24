@@ -1,8 +1,8 @@
 name: reparphone_devis
-description: ReparPhone Devis V2 - Application de devis et suivi de reparations telephone.
+description: ReparPhone Devis V3 - gestion de reparations telephone, clients, agenda et finances.
 publish_to: 'none'
 
-version: 2.0.0+2
+version: 3.0.0+3
 
 environment:
   sdk: ">=3.4.0 <4.0.0"

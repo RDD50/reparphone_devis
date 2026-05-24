@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
-import 'screens/home_screen.dart';
+import 'core/app_theme.dart';
+import 'screens/shell/main_shell.dart';
 
 void main() {
   runApp(const ReparPhoneApp());
@@ -12,31 +13,10 @@ class ReparPhoneApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'ReparPhone Devis V2',
+      title: 'ReparPhone Devis V3',
       debugShowCheckedModeBanner: false,
-      theme: ThemeData(
-        colorSchemeSeed: Colors.indigo,
-        useMaterial3: true,
-        scaffoldBackgroundColor: const Color(0xFFF5F6FA),
-        appBarTheme: const AppBarTheme(
-          centerTitle: false,
-          elevation: 0,
-          backgroundColor: Color(0xFFF5F6FA),
-        ),
-        cardTheme: CardTheme(
-          elevation: 1,
-          margin: const EdgeInsets.symmetric(vertical: 6),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(18),
-          ),
-        ),
-        inputDecorationTheme: InputDecorationTheme(
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(14),
-          ),
-        ),
-      ),
-      home: const HomeScreen(),
+      theme: AppTheme.lightTheme(),
+      home: const MainShell(),
     );
   }
 }

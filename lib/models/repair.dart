@@ -1,5 +1,8 @@
+import 'payment_info.dart';
+
 class Repair {
   final String id;
+  final String clientId;
   final String clientName;
   final String clientPhone;
   final String brand;
@@ -16,9 +19,11 @@ class Repair {
   final String depositDate;
   final String returnDate;
   final String createdAt;
+  final PaymentInfo paymentInfo;
 
   const Repair({
     required this.id,
+    required this.clientId,
     required this.clientName,
     required this.clientPhone,
     required this.brand,
@@ -35,6 +40,7 @@ class Repair {
     required this.depositDate,
     required this.returnDate,
     required this.createdAt,
+    required this.paymentInfo,
   });
 
   double get remaining => totalPrice - deposit;
@@ -47,33 +53,56 @@ class Repair {
     return status == 'Terminé' || status == 'Livré';
   }
 
+  bool get isPaid {
+    return paymentInfo.status == 'Payé';
+  }
+
   Repair copyWith({
+    String? clientId,
+    String? clientName,
+    String? clientPhone,
+    String? brand,
+    String? model,
+    String? imei,
+    String? deviceState,
+    String? accessories,
+    String? problem,
+    String? repairType,
+    double? totalPrice,
+    double? deposit,
+    String? warranty,
     String? status,
+    String? depositDate,
+    String? returnDate,
+    PaymentInfo? paymentInfo,
   }) {
     return Repair(
       id: id,
-      clientName: clientName,
-      clientPhone: clientPhone,
-      brand: brand,
-      model: model,
-      imei: imei,
-      deviceState: deviceState,
-      accessories: accessories,
-      problem: problem,
-      repairType: repairType,
-      totalPrice: totalPrice,
-      deposit: deposit,
-      warranty: warranty,
+      clientId: clientId ?? this.clientId,
+      clientName: clientName ?? this.clientName,
+      clientPhone: clientPhone ?? this.clientPhone,
+      brand: brand ?? this.brand,
+      model: model ?? this.model,
+      imei: imei ?? this.imei,
+      deviceState: deviceState ?? this.deviceState,
+      accessories: accessories ?? this.accessories,
+      problem: problem ?? this.problem,
+      repairType: repairType ?? this.repairType,
+      totalPrice: totalPrice ?? this.totalPrice,
+      deposit: deposit ?? this.deposit,
+      warranty: warranty ?? this.warranty,
       status: status ?? this.status,
-      depositDate: depositDate,
-      returnDate: returnDate,
+      depositDate: depositDate ?? this.depositDate,
+      returnDate: returnDate ?? this.returnDate,
       createdAt: createdAt,
+      paymentInfo: paymentInfo ?? this.paymentInfo,
     );
   }
 
   Map<String, dynamic> toJson() {
     return {
       'id': id,
+      'clientId': clientId,
       'clientName': clientName,
       'clientPhone': clientPhone,
       'brand': brand,
@@ -90,12 +119,14 @@ class Repair {
       'depositDate': depositDate,
       'returnDate': returnDate,
       'createdAt': createdAt,
+      'paymentInfo': paymentInfo.toJson(),
     };
   }
 
   factory Repair.fromJson(Map<String, dynamic> json) {
     return Repair(
       id: json['id'] ?? '',
+      clientId: json['clientId'] ?? '',
       clientName: json['clientName'] ?? '',
       clientPhone: json['clientPhone'] ?? '',
       brand: json['brand'] ?? '',
@@ -112,6 +143,9 @@ class Repair {
       depositDate: json['depositDate'] ?? '',
       returnDate: json['returnDate'] ?? '',
       createdAt: json['createdAt'] ?? '',
+      paymentInfo: json['paymentInfo'] == null
+          ? PaymentInfo.empty()
+          : PaymentInfo.fromJson(json['paymentInfo']),
     );
   }
 
@@ -122,27 +156,3 @@ class Repair {
     return 'REP-$year-${number.toString().padLeft(4, '0')}';
   }
 }
-
-const List<String> repairStatuses = [
-  'En attente',
-  'En réparation',
-  'En attente de pièce',
-  'Terminé',
-  'Livré',
-  'Annulé',
-];
-
-const List<String> repairTypes = [
-  'Diagnostic',
-  'Remplacement écran',
-  'Remplacement batterie',
-  'Connecteur de charge',
-  'Caméra',
-  'Haut-parleur',
-  'Micro',
-  'Désoxydation',
-  'Réinitialisation logiciel',
-  'Sauvegarde données',
-  'Pose protection écran',
-  'Autre réparation',
-];

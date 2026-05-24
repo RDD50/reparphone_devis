@@ -1,11 +1,13 @@
+import 'dart:io';
 import 'dart:typed_data';
 
+import 'package:path_provider/path_provider.dart';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:printing/printing.dart';
 
 import '../models/repair.dart';
-import '../models/shop_settings.dart';
+import '../models/shop_profile.dart';
 
 class PdfService {
   static String _money(double value) {
@@ -32,7 +34,7 @@ class PdfService {
         crossAxisAlignment: pw.CrossAxisAlignment.start,
         children: [
           pw.SizedBox(
-            width: 130,
+            width: 135,
             child: pw.Text(
               label,
               style: pw.TextStyle(fontWeight: pw.FontWeight.bold),
@@ -48,7 +50,7 @@ class PdfService {
 
   static Future<Uint8List> buildRepairPdf({
     required Repair repair,
-    required ShopSettings settings,
+    required ShopProfile profile,
   }) async {
     final doc = pw.Document();
 
@@ -67,22 +69,24 @@ class PdfService {
                     crossAxisAlignment: pw.CrossAxisAlignment.start,
                     children: [
                       pw.Text(
-                        settings.shopName,
+                        profile.shopName,
                         style: pw.TextStyle(
-                          fontSize: 20,
+                          fontSize: 21,
                           fontWeight: pw.FontWeight.bold,
                         ),
                       ),
-                      if (settings.ownerName.isNotEmpty)
-                        pw.Text('Responsable : ${settings.ownerName}'),
-                      if (settings.phone.isNotEmpty)
-                        pw.Text('Tel : ${settings.phone}'),
-                      if (settings.email.isNotEmpty)
-                        pw.Text('Email : ${settings.email}'),
-                      if (settings.address.isNotEmpty)
-                        pw.Text(settings.address),
-                      if (settings.siret.isNotEmpty)
-                        pw.Text('SIRET : ${settings.siret}'),
+                      if (profile.commercialText.isNotEmpty)
+                        pw.Text(profile.commercialText),
+                      if (profile.ownerName.isNotEmpty)
+                        pw.Text('Responsable : ${profile.ownerName}'),
+                      if (profile.phone.isNotEmpty)
+                        pw.Text('Tel : ${profile.phone}'),
+                      if (profile.email.isNotEmpty)
+                        pw.Text('Email : ${profile.email}'),
+                      if (profile.address.isNotEmpty)
+                        pw.Text(profile.address),
+                      if (profile.siret.isNotEmpty)
+                        pw.Text('SIRET : ${profile.siret}'),
                     ],
                   ),
                 ),
@@ -92,12 +96,18 @@ class PdfService {
                     border: pw.Border.all(color: PdfColors.grey600),
                     borderRadius: pw.BorderRadius.circular(6),
                   ),
-                  child: pw.Text(
-                    repair.id,
-                    style: pw.TextStyle(
-                      fontSize: 14,
-                      fontWeight: pw.FontWeight.bold,
-                    ),
+                  child: pw.Column(
+                    crossAxisAlignment: pw.CrossAxisAlignment.end,
+                    children: [
+                      pw.Text(
+                        repair.id,
+                        style: pw.TextStyle(
+                          fontSize: 14,
+                          fontWeight: pw.FontWeight.bold,
+                        ),
+                      ),
+                      pw.Text('Statut : ${repair.status}'),
+                    ],
                   ),
                 ),
               ],
@@ -124,7 +134,7 @@ class PdfService {
             _title('Intervention'),
             _row('Probleme', repair.problem),
             _row('Reparation', repair.repairType),
-            _row('Statut', repair.status),
+            _row('Statut dossier', repair.status),
             _row('Date depot', repair.depositDate),
             _row('Date restitution', repair.returnDate),
             _row('Garantie', repair.warranty),
@@ -132,10 +142,13 @@ class PdfService {
             _row('Prix total', _money(repair.totalPrice)),
             _row('Acompte', _money(repair.deposit)),
             _row('Reste a payer', _money(repair.remaining)),
+            _row('Statut paiement', repair.paymentInfo.status),
+            _row('Mode paiement', repair.paymentInfo.method),
+            _row('Date paiement', repair.paymentInfo.paymentDate),
             _title('Conditions'),
-            pw.Text(settings.termsText),
+            pw.Text(profile.termsText),
             pw.SizedBox(height: 8),
-            pw.Text(settings.warrantyText),
+            pw.Text(profile.warrantyText),
             pw.SizedBox(height: 34),
             pw.Row(
               mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
@@ -174,16 +187,33 @@ class PdfService {
 
   static Future<void> shareRepairPdf({
     required Repair repair,
-    required ShopSettings settings,
+    required ShopProfile profile,
   }) async {
     final bytes = await buildRepairPdf(
       repair: repair,
-      settings: settings,
+      profile: profile,
     );
 
     await Printing.sharePdf(
       bytes: bytes,
       filename: '${repair.id}_${repair.clientName}.pdf',
     );
+  }
+
+  static Future<File> saveRepairPdf({
+    required Repair repair,
+    required ShopProfile profile,
+  }) async {
+    final bytes = await buildRepairPdf(
+      repair: repair,
+      profile: profile,
+    );
+
+    final directory = await getApplicationDocumentsDirectory();
+    final safeClientName = repair.clientName.replaceAll(' ', '_');
+    final file = File('${directory.path}/${repair.id}_$safeClientName.pdf');
+
+    await file.writeAsBytes(bytes);
+    return file;
   }
 }

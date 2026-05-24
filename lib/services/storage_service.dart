@@ -3,77 +3,44 @@ import 'dart:io';
 
 import 'package:path_provider/path_provider.dart';
 
+import '../models/app_data.dart';
+import '../models/calendar_event.dart';
+import '../models/client.dart';
 import '../models/repair.dart';
-import '../models/shop_settings.dart';
 
 class StorageService {
   static Future<Directory> _directory() async {
     return getApplicationDocumentsDirectory();
   }
 
-  static Future<File> _repairsFile() async {
+  static Future<File> _dataFile() async {
     final directory = await _directory();
-    return File('${directory.path}/repairs_v2.json');
+    return File('${directory.path}/reparphone_v3_data.json');
   }
 
-  static Future<File> _settingsFile() async {
-    final directory = await _directory();
-    return File('${directory.path}/shop_settings_v2.json');
-  }
-
-  static Future<List<Repair>> loadRepairs() async {
+  static Future<AppData> loadData() async {
     try {
-      final file = await _repairsFile();
+      final file = await _dataFile();
 
       if (!await file.exists()) {
-        return [];
+        return AppData.empty();
       }
 
       final content = await file.readAsString();
 
       if (content.trim().isEmpty) {
-        return [];
+        return AppData.empty();
       }
 
-      final List<dynamic> data = jsonDecode(content);
-
-      return data
-          .map((item) => Repair.fromJson(item as Map<String, dynamic>))
-          .toList();
+      return AppData.fromJson(jsonDecode(content));
     } catch (_) {
-      return [];
+      return AppData.empty();
     }
   }
 
-  static Future<void> saveRepairs(List<Repair> repairs) async {
-    final file = await _repairsFile();
-    final data = repairs.map((repair) => repair.toJson()).toList();
-    await file.writeAsString(jsonEncode(data));
-  }
-
-  static Future<ShopSettings> loadSettings() async {
-    try {
-      final file = await _settingsFile();
-
-      if (!await file.exists()) {
-        return ShopSettings.defaultSettings();
-      }
-
-      final content = await file.readAsString();
-
-      if (content.trim().isEmpty) {
-        return ShopSettings.defaultSettings();
-      }
-
-      return ShopSettings.fromJson(jsonDecode(content));
-    } catch (_) {
-      return ShopSettings.defaultSettings();
-    }
-  }
-
-  static Future<void> saveSettings(ShopSettings settings) async {
-    final file = await _settingsFile();
-    await file.writeAsString(jsonEncode(settings.toJson()));
+  static Future<void> saveData(AppData data) async {
+    final file = await _dataFile();
+    await file.writeAsString(jsonEncode(data.toJson()));
   }
 
   static String nextRepairId(List<Repair> repairs) {
@@ -95,9 +62,14 @@ class StorageService {
       }
     }
 
-    return Repair.buildId(
-      year: year,
-      number: maxNumber + 1,
-    );
+    return Repair.buildId(year: year, number: maxNumber + 1);
+  }
+
+  static String nextClientId(List<Client> clients) {
+    return 'CLI-${DateTime.now().millisecondsSinceEpoch}';
+  }
+
+  static String nextEventId(List<CalendarEvent> events) {
+    return 'EVT-${DateTime.now().millisecondsSinceEpoch}';
   }
 }
