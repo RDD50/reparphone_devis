@@ -24,6 +24,9 @@ jobs:
       - name: Create platform files
         run: flutter create .
 
+      - name: Remove default widget test
+        run: rm -f test/widget_test.dart
+
       - name: Get dependencies
         run: flutter pub get
 
@@ -58,6 +61,9 @@ jobs:
 
       - name: Create platform files
         run: flutter create .
+
+      - name: Remove default widget test
+        run: Remove-Item -Force test/widget_test.dart -ErrorAction SilentlyContinue
 
       - name: Get dependencies
         run: flutter pub get
