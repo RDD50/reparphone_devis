@@ -2,7 +2,7 @@ name: reparphone_devis
 description: ReparPhone Devis V3 - gestion de reparations telephone, clients, agenda et finances.
 publish_to: 'none'
 
-version: 3.3.0+33
+version: 3.4.0+34
 
 environment:
   sdk: ">=3.4.0 <4.0.0"

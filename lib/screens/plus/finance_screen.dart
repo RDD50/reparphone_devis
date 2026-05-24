@@ -28,7 +28,7 @@ class FinanceScreen extends StatelessWidget {
   }
 
   double get totalRemaining {
-    return data.repairs.fold(0, (sum, repair) => sum + repair.remaining);
+    return data.repairs.fold(0, (sum, repair) => sum + repair.remainingDue);
   }
 
   double get totalPaid {

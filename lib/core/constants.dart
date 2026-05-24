@@ -1,5 +1,5 @@
 const String appName = 'ReparPhone Devis';
-const String appVersion = '3.3.0';
+const String appVersion = '3.4.0';
 
 const List<String> repairStatuses = [
   'En attente',

@@ -41,7 +41,7 @@ class DashboardScreen extends StatelessWidget {
   }
 
   double get remainingTotal {
-    return data.repairs.fold(0, (sum, repair) => sum + repair.remaining);
+    return data.repairs.fold(0, (sum, repair) => sum + repair.remainingDue);
   }
 
   List<CalendarEvent> get todayEvents {
@@ -117,9 +117,6 @@ class DashboardScreen extends StatelessWidget {
 
     final updatedRepair = repair.copyWith(
       clientId: client.id,
-      paymentInfo: repair.paymentInfo.status == 'Non payé' && repair.deposit > 0
-          ? repair.paymentInfo.copyWith(status: 'Acompte versé')
-          : repair.paymentInfo,
     );
 
     await onDataChanged(
