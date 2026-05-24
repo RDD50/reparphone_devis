@@ -57,6 +57,10 @@ class Repair {
       return 0;
     }
 
+    if (paymentInfo.status == 'Non payé') {
+      return totalPrice;
+    }
+
     return remaining;
   }
 
@@ -65,11 +69,11 @@ class Repair {
       return totalPrice;
     }
 
-    if (paymentInfo.status == 'Remboursé') {
-      return 0;
+    if (paymentInfo.status == 'Acompte versé') {
+      return deposit;
     }
 
-    return deposit;
+    return 0;
   }
 
   bool get isActive {
