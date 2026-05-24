@@ -103,18 +103,18 @@ void main() {
     expect(json['events'], isA<List>());
     expect(json['shopProfile'], isA<Map<String, dynamic>>());
   });
+
+  test('Un acompte est considere comme encaissement partiel', () {
+    final repair = buildRepair(
+      paymentStatus: 'Acompte versé',
+      totalPrice: 120,
+      deposit: 30,
+    );
+
+    final paidAmount = repair.paymentInfo.status == 'Payé'
+        ? repair.totalPrice
+        : repair.deposit;
+
+    expect(paidAmount, 30);
+  });
 }
-
-test('Un acompte est considere comme encaissement partiel', () {
-  final repair = buildRepair(
-    paymentStatus: 'Acompte versé',
-    totalPrice: 120,
-    deposit: 30,
-  );
-
-  final paidAmount = repair.paymentInfo.status == 'Payé'
-      ? repair.totalPrice
-      : repair.deposit;
-
-  expect(paidAmount, 30);
-});
