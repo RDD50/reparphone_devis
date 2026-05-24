@@ -1,4 +1,4 @@
-name: Build Android APK and Windows
+name: Build ReparPhone Devis V2
 
 on:
   workflow_dispatch:
@@ -27,13 +27,16 @@ jobs:
       - name: Get dependencies
         run: flutter pub get
 
+      - name: Run tests
+        run: flutter test
+
       - name: Build APK
         run: flutter build apk --release
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: reparphone-devis-apk
+          name: reparphone-devis-v2-apk
           path: build/app/outputs/flutter-apk/app-release.apk
 
   build-windows:
@@ -59,11 +62,14 @@ jobs:
       - name: Get dependencies
         run: flutter pub get
 
+      - name: Run tests
+        run: flutter test
+
       - name: Build Windows
         run: flutter build windows --release
 
       - name: Upload Windows build
         uses: actions/upload-artifact@v4
         with:
-          name: reparphone-devis-windows
+          name: reparphone-devis-v2-windows
           path: build/windows/x64/runner/Release/
