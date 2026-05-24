@@ -1,4 +1,8 @@
+import 'dart:convert';
+import 'dart:io';
+
 import 'package:flutter/material.dart';
+import 'package:path_provider/path_provider.dart';
 
 void main() {
   runApp(const ReparPhoneApp());
@@ -45,6 +49,71 @@ class Repair {
   });
 
   double get remaining => totalPrice - deposit;
+
+  Map<String, dynamic> toJson() {
+    return {
+      'clientName': clientName,
+      'clientPhone': clientPhone,
+      'brand': brand,
+      'model': model,
+      'problem': problem,
+      'repairType': repairType,
+      'totalPrice': totalPrice,
+      'deposit': deposit,
+      'status': status,
+    };
+  }
+
+  factory Repair.fromJson(Map<String, dynamic> json) {
+    return Repair(
+      clientName: json['clientName'] ?? '',
+      clientPhone: json['clientPhone'] ?? '',
+      brand: json['brand'] ?? '',
+      model: json['model'] ?? '',
+      problem: json['problem'] ?? '',
+      repairType: json['repairType'] ?? 'Diagnostic',
+      totalPrice: (json['totalPrice'] ?? 0).toDouble(),
+      deposit: (json['deposit'] ?? 0).toDouble(),
+      status: json['status'] ?? 'En attente',
+    );
+  }
+}
+
+class RepairStorage {
+  static Future<File> _getFile() async {
+    final directory = await getApplicationDocumentsDirectory();
+    return File('${directory.path}/repairs.json');
+  }
+
+  static Future<List<Repair>> loadRepairs() async {
+    try {
+      final file = await _getFile();
+
+      if (!await file.exists()) {
+        return [];
+      }
+
+      final content = await file.readAsString();
+
+      if (content.trim().isEmpty) {
+        return [];
+      }
+
+      final List<dynamic> jsonList = jsonDecode(content);
+
+      return jsonList
+          .map((item) => Repair.fromJson(item as Map<String, dynamic>))
+          .toList();
+    } catch (_) {
+      return [];
+    }
+  }
+
+  static Future<void> saveRepairs(List<Repair> repairs) async {
+    final file = await _getFile();
+    final jsonList = repairs.map((repair) => repair.toJson()).toList();
+    await file.writeAsString(jsonEncode(jsonList));
+  }
 }
 
 class HomePage extends StatefulWidget {
@@ -56,6 +125,27 @@ class HomePage extends StatefulWidget {
 
 class _HomePageState extends State<HomePage> {
   final List<Repair> repairs = [];
+  bool isLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadRepairs();
+  }
+
+  Future<void> _loadRepairs() async {
+    final savedRepairs = await RepairStorage.loadRepairs();
+
+    setState(() {
+      repairs.clear();
+      repairs.addAll(savedRepairs);
+      isLoading = false;
+    });
+  }
+
+  Future<void> _saveRepairs() async {
+    await RepairStorage.saveRepairs(repairs);
+  }
 
   void _openNewRepairPage() async {
     final Repair? newRepair = await Navigator.push(
@@ -69,6 +159,8 @@ class _HomePageState extends State<HomePage> {
       setState(() {
         repairs.add(newRepair);
       });
+
+      await _saveRepairs();
     }
   }
 
@@ -80,8 +172,49 @@ class _HomePageState extends State<HomePage> {
     return repairs.fold(0, (sum, repair) => sum + repair.deposit);
   }
 
+  Future<void> _deleteRepair(int index) async {
+    setState(() {
+      repairs.removeAt(index);
+    });
+
+    await _saveRepairs();
+  }
+
+  void _confirmDeleteRepair(int index) {
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text('Supprimer la réparation'),
+          content: const Text('Voulez-vous vraiment supprimer cette réparation ?'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Annuler'),
+            ),
+            FilledButton(
+              onPressed: () {
+                Navigator.pop(context);
+                _deleteRepair(index);
+              },
+              child: const Text('Supprimer'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
+    if (isLoading) {
+      return const Scaffold(
+        body: Center(
+          child: CircularProgressIndicator(),
+        ),
+      );
+    }
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('ReparPhone Devis'),
@@ -131,19 +264,27 @@ class _HomePageState extends State<HomePage> {
               ),
             )
           else
-            ...repairs.map(
-              (repair) => Card(
-                child: ListTile(
-                  title: Text('${repair.brand} ${repair.model}'),
-                  subtitle: Text(
-                    '${repair.clientName} • ${repair.repairType}\n'
-                    'Prix: ${repair.totalPrice.toStringAsFixed(2)} € • '
-                    'Reste: ${repair.remaining.toStringAsFixed(2)} €',
+            ...repairs.asMap().entries.map(
+              (entry) {
+                final index = entry.key;
+                final repair = entry.value;
+
+                return Card(
+                  child: ListTile(
+                    title: Text('${repair.brand} ${repair.model}'),
+                    subtitle: Text(
+                      '${repair.clientName} • ${repair.repairType}\n'
+                      'Prix: ${repair.totalPrice.toStringAsFixed(2)} € • '
+                      'Reste: ${repair.remaining.toStringAsFixed(2)} €',
+                    ),
+                    isThreeLine: true,
+                    trailing: IconButton(
+                      icon: const Icon(Icons.delete),
+                      onPressed: () => _confirmDeleteRepair(index),
+                    ),
                   ),
-                  isThreeLine: true,
-                  trailing: Text(repair.status),
-                ),
-              ),
+                );
+              },
             ),
         ],
       ),
