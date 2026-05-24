@@ -43,7 +43,7 @@ class RepairListItem extends StatelessWidget {
           ),
         ),
         trailing: Text(
-          Formatters.money(repair.remaining),
+          Formatters.money(repair.remainingDue),
           style: const TextStyle(fontWeight: FontWeight.w800),
         ),
       ),

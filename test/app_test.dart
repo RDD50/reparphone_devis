@@ -111,10 +111,42 @@ void main() {
       deposit: 30,
     );
 
-    final paidAmount = repair.paymentInfo.status == 'Payé'
-        ? repair.totalPrice
-        : repair.deposit;
+    expect(repair.collectedAmount, 30);
+  });
 
-    expect(paidAmount, 30);
+  test('Un dossier termine nest pas en cours', () {
+    final repair = buildRepair(status: 'Terminé');
+
+    expect(repair.isActive, false);
+  });
+
+  test('Un dossier paye na plus de reste du', () {
+    final repair = buildRepair(
+      paymentStatus: 'Payé',
+      totalPrice: 120,
+      deposit: 30,
+    );
+
+    expect(repair.remainingDue, 0);
+  });
+
+  test('Un dossier avec acompte conserve le bon reste du', () {
+    final repair = buildRepair(
+      paymentStatus: 'Acompte versé',
+      totalPrice: 120,
+      deposit: 30,
+    );
+
+    expect(repair.remainingDue, 90);
+  });
+
+  test('Un dossier paye compte le total comme encaisse', () {
+    final repair = buildRepair(
+      paymentStatus: 'Payé',
+      totalPrice: 120,
+      deposit: 30,
+    );
+
+    expect(repair.collectedAmount, 120);
   });
 }

@@ -39,7 +39,7 @@ class FinanceScreen extends StatelessWidget {
 
   List<Repair> get unpaidRepairs {
     return data.repairs
-        .where((repair) => repair.paymentInfo.status != 'Payé')
+        .where((repair) => repair.remainingDue > 0)
         .toList()
         .reversed
         .toList();

@@ -43,10 +43,39 @@ class Repair {
     required this.paymentInfo,
   });
 
-  double get remaining => totalPrice - deposit;
+  double get remaining {
+    final value = totalPrice - deposit;
+    return value < 0 ? 0 : value;
+  }
+
+  double get remainingDue {
+    if (paymentInfo.status == 'Payé') {
+      return 0;
+    }
+
+    if (paymentInfo.status == 'Remboursé') {
+      return 0;
+    }
+
+    return remaining;
+  }
+
+  double get collectedAmount {
+    if (paymentInfo.status == 'Payé') {
+      return totalPrice;
+    }
+
+    if (paymentInfo.status == 'Remboursé') {
+      return 0;
+    }
+
+    return deposit;
+  }
 
   bool get isActive {
-    return status != 'Livré' && status != 'Annulé';
+    return status == 'En attente' ||
+        status == 'En réparation' ||
+        status == 'En attente de pièce';
   }
 
   bool get isFinished {

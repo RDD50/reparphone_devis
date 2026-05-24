@@ -329,7 +329,7 @@ class _RepairDetailScreenState extends State<RepairDetailScreen> {
           _section('Paiement'),
           _info('Prix total', Formatters.money(repair.totalPrice)),
           _info('Acompte', Formatters.money(repair.deposit)),
-          _info('Reste à payer', Formatters.money(repair.remaining)),
+          _info('Reste à payer', Formatters.money(repair.remainingDue)),
           _info('Statut paiement', repair.paymentInfo.status),
           _info('Mode paiement', repair.paymentInfo.method),
           _info('Date paiement', repair.paymentInfo.paymentDate),
